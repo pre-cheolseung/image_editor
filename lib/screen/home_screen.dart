@@ -16,6 +16,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:image_editor/components/main_app_bar.dart';
+import 'package:image_editor/components/footer.dart';
 
 import 'package:image_picker/image_picker.dart';
 
@@ -42,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // MainAppBar를 상단, 좌, 우, 끝에 정렬
           Positioned(
             top: 0,
+            // left와 right 모두 0을 주면 좌우로 최대 크기 차지
             left: 0,
             right: 0,
             child: MainAppBar(
@@ -50,9 +52,26 @@ class _HomeScreenState extends State<HomeScreen> {
               onSaveImage: onSaveImage,   // 이미지 저장 버튼
             ),
           ),
+          // 이미지가 선택되면 Footer 위치
+          if (image != null)
+            // Footer를 하단, 좌, 우, 끝에 정렬
+            Positioned(
+              bottom: 0,
+              // left와 right 모두 0을 주면 좌우로 최대 크기 차지
+              left: 0,
+              right: 0,
+              child: Footer(
+                onEmoticonTap: onEmoticonTap,
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  // Footer
+  void onEmoticonTap(int index) {
+
   }
 
   // 이미지 선택 버튼
