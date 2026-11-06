@@ -23,6 +23,7 @@ import 'package:image_editor/components/main_app_bar.dart';
 import 'package:image_editor/model/sticker_model.dart';
 
 import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);   // const 생성자 : 최초 선언 후 변경 불가능한 빌드 타임 함수
@@ -91,10 +92,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               ...stickers.map(
                 // 스티커 최초 선택 시 중앙에 배치
-                (stickers) => Center(
+                (sticker) => Center(
                   child: EmoticonSticker(
                     key: ObjectKey(sticker.id),
-                    onTransform: onTransform,
+                    onTransform: () {
+                      onTransform(sticker.id);   // 스티커 ID 값을 함수의 매개변수로 전달
+                    },
                     imgPath: sticker.imgPath,
                     isSelected: selectedId == sticker.id,
                   ),
@@ -119,8 +122,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Footer
-  void onEmoticonTap(int index) {
-
+  // 스티커를 누를 때마다 실행
+  void onEmoticonTap(int index) async {
+    // 상태 변경 시 setState() 함수 실행
+    // 값 변경 시 build() 함수 재실행
+    // Clean -> setState() -> Dirty -> build() -> Clean
+    setState(() {
+      stickers = {
+        ...stickers,
+        StickerModel(
+          id: Uuid().v4(),   // 스티커의 고유 ID를 절대로 겹치지 않는 String 값으로 생성
+          imgPath: 'assets/img/emoticon_$index.png',
+        ),
+      };
+    });
   }
 
   // 이미지 선택 버튼
@@ -148,8 +163,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   }
 
-  // 스티커의 상태가 변경될 때마다 실행
-  void onTransform() {
-
+  // 스티커의 상태가 변경될 때마다 변경 중인 스티커를 현재 선택한 스티커로 지정
+  void onTransform(String id) {
+    // 상태 변경 시 setState() 함수 실행
+    // 값 변경 시 build() 함수 재실행
+    // Clean -> setState() -> Dirty -> build() -> Clean
+    setState(() {
+      selectedId = id;
+    });
   }
 }
