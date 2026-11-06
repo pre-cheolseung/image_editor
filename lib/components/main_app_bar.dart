@@ -17,9 +17,9 @@ class MainAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 100,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
-      ),
+      // decoration: BoxDecoration(
+      //   color: Colors.white.withValues(alpha: 0.9),
+      // ),
       child: Row(
         // 자식(child) 위젯들 사이에 균등한 간격을 두고,
         // 양쪽 끝(시작과 끝)에는 그 간격의 절반 크기만큼의 여백을 배치하는 정렬 
