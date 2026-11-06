@@ -66,5 +66,15 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+    <!-- 사진첩에 이미지를 저장하기 위한 필수 권한 문구 -->
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Permission is required to save images created in the app to your photo gallery.</string>
+    <!-- 사진첩의 기존 데이터를 불러오거나 체크 등을 위한 권한 문구 -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Permission is required to view and save images in the photo gallery.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Access to the camera is required.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Access to the microphone is required.</string>
 </dict>
 </plist>

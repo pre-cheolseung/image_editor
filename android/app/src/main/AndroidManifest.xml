@@ -1,8 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- android:requestLegacyExternalStorage="true" -->
+    <!-- Android 10(API 29) 이하 기기에서 앨범 생성을 위한 호환성 플래그 -->
     <application
         android:label="image_editor"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:requestLegacyExternalStorage="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
