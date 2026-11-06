@@ -17,8 +17,20 @@ import 'package:flutter/material.dart';
 
 import 'package:image_editor/components/main_app_bar.dart';
 
-class HomeScreen extends StatelessWidget {
+import 'package:image_picker/image_picker.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);   // const 생성자 : 최초 선언 후 변경 불가능한 빌드 타임 함수
+
+  @override
+  // State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() {
+    return _HomeScreenState();
+  }
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  XFile? image;   // 선택한 이미지를 저장할 변수
 
   @override
   Widget build(BuildContext context) {
@@ -33,9 +45,9 @@ class HomeScreen extends StatelessWidget {
             left: 0,
             right: 0,
             child: MainAppBar(
-              onPickImage: onPickImage,
-              onSaveImage: onSaveImage,
-              onDeleteImage: onDeleteImage
+              onPickImage: onPickImage,   // 이미지 선택 버튼
+              onDeleteImage: onDeleteImage,   // 이미지 삭제 버튼
+              onSaveImage: onSaveImage,   // 이미지 저장 버튼
             ),
           ),
         ],
@@ -43,14 +55,28 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  void onPickImage() {
+  // 이미지 선택 버튼
+  void onPickImage() async {
+    final image = await ImagePicker().pickImage(
+      // source: ImageSource.camera   // 카메라로 직접 촬영
+      source: ImageSource.gallery   // 갤러리에서 이미지 선택
+    );
 
+    // 상태 변경 시 setState() 함수 실행
+    // 값 변경 시 build() 함수 재실행
+    // Clean -> setState() -> Dirty -> build() -> Clean
+    setState(() {
+      this.image = image;   // 선택한 이미지 저장
+    });
   }
 
-  void onSaveImage() {
-
-  }
+  // 이미지 삭제 버튼
   void onDeleteImage() {
+
+  }
+
+  // 이미지 저장 버튼
+  void onSaveImage() {
 
   }
 }
