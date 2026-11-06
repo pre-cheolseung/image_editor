@@ -17,8 +17,10 @@ import 'dart:io';   // 파일 관련 기능 사용
 
 import 'package:flutter/material.dart';
 
-import 'package:image_editor/components/main_app_bar.dart';
+import 'package:image_editor/components/emoticon_sticker.dart';
 import 'package:image_editor/components/footer.dart';
+import 'package:image_editor/components/main_app_bar.dart';
+import 'package:image_editor/model/sticker_model.dart';
 
 import 'package:image_picker/image_picker.dart';
 
@@ -34,6 +36,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   XFile? image;   // 선택한 이미지를 저장할 변수
+  String? selectedId;   // 현재 선택된 스티커 ID
+  Set<StickerModel> stickers = {};   // 화면에 추가된 스티커를 저장할 변수
 
   @override
   Widget build(BuildContext context) {
@@ -78,9 +82,25 @@ class _HomeScreenState extends State<HomeScreen> {
       return Positioned.fill(
         // 위젯이 확대 및 좌우 이동을 가능하게 하는 위젯
         child: InteractiveViewer(
-          child: Image.file(
-            File(image!.path),
-            fit: BoxFit.cover,   // 이미지가 부모 위젯의 최대 크기를 차지
+          child: Stack(
+            fit: StackFit.expand,   // 최대 크기로 확대
+            children: [
+              Image.file(
+                File(image!.path),
+                fit: BoxFit.cover,   // 이미지가 부모 위젯의 최대 크기를 차지
+              ),
+              ...stickers.map(
+                // 스티커 최초 선택 시 중앙에 배치
+                (stickers) => Center(
+                  child: EmoticonSticker(
+                    key: ObjectKey(sticker.id),
+                    onTransform: onTransform,
+                    imgPath: sticker.imgPath,
+                    isSelected: selectedId == sticker.id,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -125,6 +145,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 이미지 저장 버튼
   void onSaveImage() {
+
+  }
+
+  // 스티커의 상태가 변경될 때마다 실행
+  void onTransform() {
 
   }
 }
