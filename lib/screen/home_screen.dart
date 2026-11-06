@@ -13,6 +13,8 @@
 //   print('알 수 없는 오류 발생: $e');
 // }
 
+import 'dart:io';   // 파일 관련 기능 사용
+
 import 'package:flutter/material.dart';
 
 import 'package:image_editor/components/main_app_bar.dart';
@@ -40,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Stack(
         fit: StackFit.expand,   // 자식 위젯들을 최대 크기로 확대
         children: [
+          renderBody(),
           // MainAppBar를 상단, 좌, 우, 끝에 정렬
           Positioned(
             top: 0,
@@ -67,6 +70,32 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Widget renderBody() {
+    if (image != null) {
+      // Stack의 최대 크기만큼 차지
+      return Positioned.fill(
+        // 위젯이 확대 및 좌우 이동을 가능하게 하는 위젯
+        child: InteractiveViewer(
+          child: Image.file(
+            File(image!.path),
+            fit: BoxFit.cover,   // 이미지가 부모 위젯의 최대 크기를 차지
+          ),
+        ),
+      );
+    } else {
+      // 이미지 선택이 안 되어 있는 경우 이미지 선택 버튼 표시
+      return Center(
+        child: TextButton(
+          onPressed: onPickImage,
+          child: Text('Select Image'),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.grey
+          ),
+        ),
+      );
+    }
   }
 
   // Footer
