@@ -145,6 +145,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // Clean -> setState() -> Dirty -> build() -> Clean
     setState(() {
       this.image = image;   // 선택한 이미지 저장
+
+      stickers.clear();   // 화면에 있는 스티커 모두 삭제
+      // stickers = stickers.where((sticker) => false).toSet();   // 화면에 있는 스티커 모두 삭제
     });
   }
 
