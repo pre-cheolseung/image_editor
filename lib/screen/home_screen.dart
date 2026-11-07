@@ -69,14 +69,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget renderBody() {
-    if (image != null) {
-      // 위젯을 이미지로 저장하는 데 사용
-      return Positioned.fill(
-        key: imgKey,
-        // Stack의 최대 크기만큼 차지
+  if (image != null) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,   // 빈 공간을 눌렀을 때 터치 이벤트를 감지하기 위해 히트테스트 동작 설정
+      onTap: () {
+        // 외부 빈 곳을 누르면 모든 스티커의 선택을 해제
+        setState(() {
+          selectedId = null;   // 현재 선택된 스티커의 ID나 인덱스를 초기화
+        });
+      },
+      // 전체 화면을 터치 감지 영역으로 만들기 위해 사용
+      child: SizedBox.expand(
         child: RepaintBoundary(
-          // 위젯이 확대 및 좌우 이동을 가능하게 하는 위젯
+          key: imgKey,   // 이미지 저장용 Key는 RepaintBoundary에 위치하는 것이 우월
           child: InteractiveViewer(
+            maxScale: 4.0,   // 최대 4.0배까지 확대 가능 (Default : 2.5)
+            minScale: 1.0,   // 최소 1.0배까지 축소 가능 (Default : 0.8)
             child: Stack(
               fit: StackFit.expand,   // 최대 크기로 확대
               children: [
@@ -84,37 +92,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   File(image!.path),
                   fit: BoxFit.cover,   // 이미지가 부모 위젯의 최대 크기를 차지
                 ),
+                // 스티커 목록 생성
                 ...stickers.map(
                   // 스티커 최초 선택 시 중앙에 배치
-                  (sticker) => Center(
-                    child: EmoticonSticker(
-                      key: ObjectKey(sticker.id),
-                      onTransform: () {
-                        onTransform(sticker.id);   // 스티커 ID 값을 함수의 매개변수로 전달
-                      },
-                      imgPath: sticker.imgPath,
-                      isSelected: selectedId == sticker.id,
-                    ),
-                  ),
+                  (sticker) {
+                    // 스티커의 개별 이동을 제대로 구현하려면 Center 대신
+                    // Positioned(left: sticker.x, top: sticker.y) 구조와
+                    // GestureDetector(onPanUpdate: ...) 조합이 필요
+                    return Center( 
+                      child: EmoticonSticker(
+                        key: ObjectKey(sticker.id),
+                        onTransform: () {
+                          onTransform(sticker.id);   // 스티커 ID 값을 함수의 매개변수로 전달
+                        },
+                        imgPath: sticker.imgPath,
+                        isSelected: selectedId == sticker.id,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
           ),
         ),
-      );
-    } else {
-      // 이미지 선택이 안 되어 있는 경우 이미지 선택 버튼 표시
-      return Center(
-        child: TextButton(
-          onPressed: onPickImage,
-          child: Text('Select Image'),
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.grey
-          ),
+      ),
+    );
+  } else {
+    return Center(
+      child: TextButton(
+        onPressed: onPickImage,
+        child: const Text('Select Image'),
+        style: TextButton.styleFrom(
+          foregroundColor: Colors.grey,
         ),
-      );
-    }
+      ),
+    );
   }
+}
 
   // Footer
   // 스티커를 누를 때마다 실행
@@ -164,71 +178,72 @@ class _HomeScreenState extends State<HomeScreen> {
   // 이미지 저장 버튼
   // 이미지 저장 기능 구현 함수
   void onSaveImage() async {
-    RenderRepaintBoundary boundary = 
-      imgKey.currentContext!.findRenderObject() as RenderRepaintBoundary;   // 화면에 렌더링된 바운더리 위젯을 검색 후 저장
-    
-    ui.Image image = await boundary.toImage();   // 바운더리를 이미지로 변경 (dart:ui 패키지 내의 Image 클래스)
-    ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);   // ByteData 형태로 변경
-    Uint8List pngBytes = byteData!.buffer.asUint8List();   // Unit8List 형태로 변경 (플러그인 필수 요구 사항)
+    // 상태 변경 시 setState() 함수 실행
+    // 값 변경 시 build() 함수 재실행
+    // Clean -> setState() -> Dirty -> build() -> Clean
+    setState(() {
+      selectedId = null;   // 현재 선택된 스티커의 ID나 인덱스를 초기화
+    });
 
-    try {
-      // 100% 화질(원본 바이트) 그대로 갤러리에 저장
-      await Gal.putImageBytes(
-        pngBytes,
-        album: 'ImageEditor',   // 폴더 및 앨범명 지정
-      );
+    // setState()로 인한 화면 재빌드(스티커 해제)가 완료된 후 실행되도록 보장
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      RenderRepaintBoundary boundary = 
+        imgKey.currentContext!.findRenderObject() as RenderRepaintBoundary;   // 화면에 렌더링된 바운더리 위젯을 검색 후 저장
+      
+      ui.Image image = await boundary.toImage();   // 바운더리를 이미지로 변경 (dart:ui 패키지 내의 Image 클래스)
+      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);   // ByteData 형태로 변경
+      Uint8List imgBytes = byteData!.buffer.asUint8List();   // Unit8List 형태로 변경 (플러그인 필수 요구 사항)
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.deepPurpleAccent,
-          content: Text('Save success'),
-          behavior: SnackBarBehavior.floating,   // 화면 위에 떠 있는 스타일
-          duration: const Duration(seconds: 5),   // 보여주는 시간 5초로 설정 (Default : 4)
-          // 확인 버튼
-          action: SnackBarAction(
-            label: 'Confirm',
-            textColor: Colors.white,
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
+      try {
+        // 100% 화질(원본 바이트) 그대로 갤러리에 저장
+        await Gal.putImageBytes(
+          imgBytes,
+          album: 'ImageEditor',   // 폴더 및 앨범명 지정
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.deepPurpleAccent,
+            content: Text('Save success'),
+            behavior: SnackBarBehavior.floating,   // 화면 위에 떠 있는 스타일
+            duration: const Duration(seconds: 3),   // 보여주는 시간 5초로 설정 (Default : 4)
           ),
-        ),
-      );
-    // 권한 부족, 용량 부족 등 에러 처리
-    } on GalException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.redAccent,
-          content: Text('Save failed : ${e.type.name}'),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 10),
-          action: SnackBarAction(
-            label: 'Confirm',
-            textColor: Colors.white,
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
+        );
+      // 권한 부족, 용량 부족 등 에러 처리
+      } on GalException catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.redAccent,
+            content: Text('Save failed : ${e.type.name}'),
+            behavior: SnackBarBehavior.floating,
+            // 확인 버튼
+            action: SnackBarAction(
+              label: 'Confirm',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
           ),
-        ),
-      );
-    // 알 수 없는 에러 처리
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.redAccent,
-          content: Text('Unknown error occurred : $e'),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 10),
-          action: SnackBarAction(
-            label: 'Confirm',
-            textColor: Colors.white,
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
+        );
+      // 알 수 없는 에러 처리
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.redAccent,
+            content: Text('Unknown error occurred : $e'),
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Confirm',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
           ),
-        ),
-      );
-    }
+        );
+      }
+    });
   }
 
   // 스티커의 상태가 변경될 때마다 변경 중인 스티커를 현재 선택한 스티커로 지정
