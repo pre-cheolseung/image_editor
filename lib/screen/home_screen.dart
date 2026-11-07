@@ -155,7 +155,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 이미지 삭제 버튼
   void onDeleteImage() {
-
+    // 상태 변경 시 setState() 함수 실행
+    // 값 변경 시 build() 함수 재실행
+    // Clean -> setState() -> Dirty -> build() -> Clean
+    setState(() {
+      stickers = stickers.where((sticker) => sticker.id != selectedId).toSet();   // 현재 선택돼 있는 스티커 삭제 후 Set로 변환
+    });
   }
 
   // 이미지 저장 버튼
