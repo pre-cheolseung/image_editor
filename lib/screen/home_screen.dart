@@ -14,14 +14,19 @@
 // }
 
 import 'dart:io';   // 파일 관련 기능 사용
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 import 'package:image_editor/components/emoticon_sticker.dart';
 import 'package:image_editor/components/footer.dart';
 import 'package:image_editor/components/main_app_bar.dart';
 import 'package:image_editor/model/sticker_model.dart';
 
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
@@ -39,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   XFile? image;   // 선택한 이미지를 저장할 변수
   String? selectedId;   // 현재 선택된 스티커 ID
   Set<StickerModel> stickers = {};   // 화면에 추가된 스티커를 저장할 변수
+  GlobalKey imgKey = GlobalKey();   // 이미지로 전환할 위젯에 입력해 줄 키값
 
   @override
   Widget build(BuildContext context) {
@@ -79,31 +85,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget renderBody() {
     if (image != null) {
-      // Stack의 최대 크기만큼 차지
-      return Positioned.fill(
-        // 위젯이 확대 및 좌우 이동을 가능하게 하는 위젯
-        child: InteractiveViewer(
-          child: Stack(
-            fit: StackFit.expand,   // 최대 크기로 확대
-            children: [
-              Image.file(
-                File(image!.path),
-                fit: BoxFit.cover,   // 이미지가 부모 위젯의 최대 크기를 차지
-              ),
-              ...stickers.map(
-                // 스티커 최초 선택 시 중앙에 배치
-                (sticker) => Center(
-                  child: EmoticonSticker(
-                    key: ObjectKey(sticker.id),
-                    onTransform: () {
-                      onTransform(sticker.id);   // 스티커 ID 값을 함수의 매개변수로 전달
-                    },
-                    imgPath: sticker.imgPath,
-                    isSelected: selectedId == sticker.id,
+      // 위젯을 이미지로 저장하는 데 사용
+      return RepaintBoundary(
+        key: imgKey,
+        // Stack의 최대 크기만큼 차지
+        child: Positioned.fill(
+          // 위젯이 확대 및 좌우 이동을 가능하게 하는 위젯
+          child: InteractiveViewer(
+            child: Stack(
+              fit: StackFit.expand,   // 최대 크기로 확대
+              children: [
+                Image.file(
+                  File(image!.path),
+                  fit: BoxFit.cover,   // 이미지가 부모 위젯의 최대 크기를 차지
+                ),
+                ...stickers.map(
+                  // 스티커 최초 선택 시 중앙에 배치
+                  (sticker) => Center(
+                    child: EmoticonSticker(
+                      key: ObjectKey(sticker.id),
+                      onTransform: () {
+                        onTransform(sticker.id);   // 스티커 ID 값을 함수의 매개변수로 전달
+                      },
+                      imgPath: sticker.imgPath,
+                      isSelected: selectedId == sticker.id,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
@@ -154,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // 이미지 삭제 버튼
-  void onDeleteImage() {
+  void onDeleteImage() async {
     // 상태 변경 시 setState() 함수 실행
     // 값 변경 시 build() 함수 재실행
     // Clean -> setState() -> Dirty -> build() -> Clean
@@ -164,8 +174,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // 이미지 저장 버튼
-  void onSaveImage() {
+  // 이미지 저장 기능 구현 함수
+  void onSaveImage() async {
+    RenderRepaintBoundary boundary = 
+      imgKey.currentContext!.findRenderObject() as RenderRepaintBoundary;   // 화면에 렌더링된 바운더리 위젯을 검색 후 저장
+    
+    ui.Image image = await boundary.toImage();   // 바운더리를 이미지로 변경 (dart:ui 패키지 내의 Image 클래스)
+    ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);   // ByteData 형태로 변경
+    Uint8List pngBytes = byteData!.buffer.asUint8List();   // Unit8List 형태로 변경 (플러그인 필수 요구 사항)
 
+    await ImageGallerySaverPlus.saveImage(pngBytes, quality: 100);   // 이미지 저장
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        backgroundColor: Colors.deepPurpleAccent,
+        content: Text('Saved'),
+      ),
+    );
   }
 
   // 스티커의 상태가 변경될 때마다 변경 중인 스티커를 현재 선택한 스티커로 지정
