@@ -169,7 +169,11 @@ class _HomeScreenState extends State<HomeScreen> {
     Uint8List pngBytes = byteData!.buffer.asUint8List();   // Unit8List 형태로 변경 (플러그인 필수 요구 사항)
 
     try {
-      await Gal.putImageBytes(pngBytes);   // 100% 화질(원본 바이트) 그대로 갤러리에 저장
+      // 100% 화질(원본 바이트) 그대로 갤러리에 저장
+      await Gal.putImageBytes(
+        pngBytes,
+        album: 'ImageEditor',   // 폴더 및 앨범명 지정
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
