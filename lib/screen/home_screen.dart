@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
+import 'package:image_editor/components/draggable_text.dart';
 import 'package:image_editor/components/emoticon_sticker.dart';
 import 'package:image_editor/components/footer.dart';
 import 'package:image_editor/components/main_app_bar.dart';
@@ -30,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? selectedId;   // 현재 선택된 스티커 ID
   Set<StickerModel> stickers = {};   // 화면에 추가된 스티커를 저장할 변수
   GlobalKey imgKey = GlobalKey();   // 이미지로 전환할 위젯에 입력해 줄 키값
+  final List<Widget> textItems = [];   // 생성된 텍스트 위젯들을 담는 리스트
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
             right: 0,
             child: MainAppBar(
               onPickImage: onPickImage,   // 이미지 선택 버튼
+              onEnterText: onEnterText,   // 텍스트 입력 버튼
               onDeleteImage: onDeleteImage,   // 이미지 삭제 버튼
               onSaveImage: onSaveImage,   // 이미지 저장 버튼
             ),
@@ -77,6 +80,8 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           selectedId = null;   // 현재 선택된 스티커의 ID나 인덱스를 초기화
         });
+
+        FocusScope.of(context).unfocus();   // 현재 활성화된 모든 포커스를 해제 (텍스트 입력 창 등)
       },
       // 전체 화면을 터치 감지 영역으로 만들기 위해 사용
       child: SizedBox.expand(
@@ -111,6 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 ),
+                ...textItems,   // 추가된 투명 텍스트 위젯들 렌더링
               ],
             ),
           ),
@@ -161,7 +167,38 @@ class _HomeScreenState extends State<HomeScreen> {
       this.image = image;   // 선택한 이미지 저장
 
       stickers.clear();   // 화면에 있는 스티커 모두 삭제
+      textItems.clear();   // 화면에 있는 텍스트 모두 삭제
       // stickers = stickers.where((sticker) => false).toSet();   // 화면에 있는 스티커 모두 삭제
+    });
+  }
+
+  // 텍스트 입력 버튼
+  void onEnterText() async {
+    final itemKey = UniqueKey();   // 삭제 시 정확한 대상을 찾기 위해 Key를 변수로 먼저 생성
+    
+    // 상태 변경 시 setState() 함수 실행
+    // 값 변경 시 build() 함수 재실행
+    // Clean -> setState() -> Dirty -> build() -> Clean
+    setState(() {
+      textItems.add(
+        DraggableText(
+          key: itemKey,   // 각 위젯의 고유 상태 유지를 위해 필수
+          initialPosition: const Offset(100, 200), // 초기 생성 위치
+          onSubmitted: (text) {
+            debugPrint('Entered text : $text');
+          },
+          // 빈 텍스트일 경우 리스트에서 해당 Key를 가진 위젯 제거
+          onDelete: () {
+            // 상태 변경 시 setState() 함수 실행
+            // 값 변경 시 build() 함수 재실행
+            // Clean -> setState() -> Dirty -> build() -> Clean
+            setState(() {
+              textItems.removeWhere((item) => item.key == itemKey);
+            });
+            debugPrint('Automatically deleted due to empty text');
+          },
+        ),
+      );
     });
   }
 

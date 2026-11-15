@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 class MainAppBar extends StatelessWidget {
   final VoidCallback onPickImage;   // 이미지 선택 버튼을 눌렀을 때 실행할 함수
+  final VoidCallback onEnterText;   // 텍스트 입력 버튼을 눌렀을 때 실행할 함수
   final VoidCallback onDeleteImage;   // 이미지 삭제 버튼을 눌렀을 때 실행할 함수
   final VoidCallback onSaveImage;   // 이미지 저장 버튼을 눌렀을 때 실행할 함수
 
   // const 생성자 : 최초 선언 후 변경 불가능한 빌드 타임 함수
   const MainAppBar({
     required this.onPickImage,
+    required this.onEnterText,
     required this.onDeleteImage,
     required this.onSaveImage,
     Key? key,
@@ -32,6 +34,14 @@ class MainAppBar extends StatelessWidget {
             onPressed: onPickImage,
             icon: Icon(
               Icons.image_search_outlined,
+              color: Colors.grey[700],
+            ),
+          ),
+          // 텍스트 입력 버튼
+          IconButton(
+            onPressed: onEnterText,
+            icon: Icon(
+              Icons.text_fields,
               color: Colors.grey[700],
             ),
           ),
