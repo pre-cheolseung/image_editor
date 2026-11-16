@@ -49,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
             right: 0,
             child: MainAppBar(
               onPickImage: onPickImage,   // 이미지 선택 버튼
-              onEnterText: onEnterText,   // 텍스트 입력 버튼
+              onTextInput : onTextInput ,   // 텍스트 입력 버튼
               onDeleteImage: onDeleteImage,   // 이미지 삭제 버튼
               onSaveImage: onSaveImage,   // 이미지 저장 버튼
             ),
@@ -173,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // 텍스트 입력 버튼
-  void onEnterText() async {
+  void onTextInput() async {
     final itemKey = UniqueKey();   // 삭제 시 정확한 대상을 찾기 위해 Key를 변수로 먼저 생성
     
     // 상태 변경 시 setState() 함수 실행

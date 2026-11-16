@@ -6,27 +6,30 @@ class DraggableText extends StatefulWidget {
   final VoidCallback onDelete;   // 삭제 콜백
 
   const DraggableText({
-    super.key,
     required this.initialPosition,
     required this.onSubmitted,
     required this.onDelete,
-  });
+    Key? key,
+  }) : super(key: key);
 
   @override
-  State<DraggableText> createState() => _DraggableTextState();
+  // State<DraggableText> createState() => _DraggableTextState();
+  State<DraggableText> createState() {
+    return _DraggableTextState();
+  }
 }
 
 class _DraggableTextState extends State<DraggableText> {
-  late Offset position;
+  late Offset _position;
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  bool isEditing = true;
+  bool _isEditing = true;
 
   @override
   void initState() {
     super.initState();
 
-    position = widget.initialPosition;
+    _position = widget.initialPosition;
 
     // 위젯이 생성되자마자 자동으로 키보드 및 포커스 활성화
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -46,11 +49,23 @@ class _DraggableTextState extends State<DraggableText> {
           // 값 변경 시 build() 함수 재실행
           // Clean -> setState() -> Dirty -> build() -> Clean
           setState(() {
-            isEditing = false;
+            _isEditing = false;
           });
+
           widget.onSubmitted(text);
         }
       }
+    });
+  }
+
+  void _startEditing() {
+    if (_isEditing) return;
+    setState(() {
+      _isEditing = true;
+    });
+    // 상태 변경 후 프레임에서 포커스를 요청해야 안정적으로 커서가 잡힘
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
     });
   }
 
@@ -65,8 +80,8 @@ class _DraggableTextState extends State<DraggableText> {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: position.dx,
-      top: position.dy,
+      left: _position.dx,
+      top: _position.dy,
       child: GestureDetector(
         // 드래그로 위치 이동
         onPanUpdate: (details) {
@@ -74,19 +89,10 @@ class _DraggableTextState extends State<DraggableText> {
           // 값 변경 시 build() 함수 재실행
           // Clean -> setState() -> Dirty -> build() -> Clean
           setState(() {
-            position += details.delta;
+            _position += details.delta;
           });
         },
-        // 입력 완료된 텍스트를 다시 탭하면 재수정 가능
-        onTap: () {
-          // 상태 변경 시 setState() 함수 실행
-          // 값 변경 시 build() 함수 재실행
-          // Clean -> setState() -> Dirty -> build() -> Clean
-          setState(() {
-            isEditing = true;
-          });
-          _focusNode.requestFocus();
-        },
+        onTap: _startEditing,
         child: Container(
           constraints: const BoxConstraints(
             minWidth: 100,
@@ -99,29 +105,66 @@ class _DraggableTextState extends State<DraggableText> {
           decoration: BoxDecoration(
             color: Colors.transparent,   // 배경은 완전히 투명하게 유지
             // 입력 중일 때만 점선 느낌의 반투명 테두리를 표시하고 완료되면 투명 처리
-            border: isEditing
-                    ? Border.all(color: Colors.blueAccent.withOpacity(0.7), width: 1.5)
-                    : Border.all(color: Colors.transparent),
+            border: _isEditing
+              ? Border.all(color: Colors.blueAccent.withValues(alpha: 0.7), width: 1.5)
+              : Border.all(color: Colors.transparent),
             borderRadius: BorderRadius.circular(6),
           ),
-          child: IntrinsicWidth(
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              maxLines: null,   // 줄바꿈 허용
-              style: const TextStyle(
-                fontSize: 18,
-                color: Colors.black,
-                fontWeight: FontWeight.w500,
+          // Row로 감싸서 TextField와 삭제 버튼의 너비를 명확하게 분리
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Flexible(
+                child: IntrinsicWidth(
+                  child: TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    // 편집 모드가 아닐 때 터치 가로채는 것을 방지하고 _startEditing 연결
+                    readOnly: !_isEditing,
+                    onTap: !_isEditing ? _startEditing : null,
+                    maxLines: null,   // 줄바꿈 허용
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Colors.black,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      hintText: 'Please enter text',
+                      hintStyle: TextStyle(color: Colors.black38),
+                    ),
+                  ),
+                ),
               ),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-                hintText: 'Please enter text',
-                hintStyle: TextStyle(color: Colors.black38),
-              ),
-            ),
+              // 편집 모드일 때만 텍스트 유무에 따라 삭제 아이콘 렌더링
+              if (_isEditing)
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _controller,   // _controller 값 변경만 감지
+                  builder: (context, value, child) {
+                    // 텍스트가 비어있으면 아이콘 숨김
+                    if (value.text.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return GestureDetector(
+                      onTap: () {
+                        _controller.clear();
+                        _focusNode.requestFocus();   // 텍스트 삭제 후에도 입력 포커스 유지
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 6),
+                        child: Icon(
+                          Icons.cancel,
+                          color: Colors.grey,
+                          size: 18,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+            ],
           ),
         ),
       ),
