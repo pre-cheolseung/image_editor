@@ -31,14 +31,14 @@ class _HomeScreenState extends State<HomeScreen> {
   String? selectedId;   // 현재 선택된 스티커 ID
   Set<StickerModel> stickers = {};   // 화면에 추가된 스티커를 저장할 변수
   GlobalKey imgKey = GlobalKey();   // 이미지로 전환할 위젯에 입력해 줄 키값
-  final List<Widget> textItems = [];   // 생성된 텍스트 위젯들을 담는 리스트
+  final List<Widget> texts = [];   // 생성된 텍스트 위젯들을 담는 리스트
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       // 스크린에 Body, AppBar, Footer 순서로 쌓을 준비
       body: Stack(
-        fit: StackFit.expand,   // 자식 위젯들을 최대 크기로 확대
+        fit: StackFit.expand,   // 자식(child) 위젯들을 최대 크기로 확대
         children: [
           renderBody(),
           // MainAppBar를 상단, 좌, 우, 끝에 정렬
@@ -116,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 ),
-                ...textItems,   // 추가된 투명 텍스트 위젯들 렌더링
+                ...texts,   // 추가된 투명 텍스트 위젯들 렌더링
               ],
             ),
           ),
@@ -167,23 +167,23 @@ class _HomeScreenState extends State<HomeScreen> {
       this.image = image;   // 선택한 이미지 저장
 
       stickers.clear();   // 화면에 있는 스티커 모두 삭제
-      textItems.clear();   // 화면에 있는 텍스트 모두 삭제
+      texts.clear();   // 화면에 있는 텍스트 모두 삭제
       // stickers = stickers.where((sticker) => false).toSet();   // 화면에 있는 스티커 모두 삭제
     });
   }
 
   // 텍스트 입력 버튼
   void onTextInput() async {
-    final itemKey = UniqueKey();   // 삭제 시 정확한 대상을 찾기 위해 Key를 변수로 먼저 생성
+    final txtKey = UniqueKey();   // 삭제 시 정확한 대상을 찾기 위해 Key를 변수로 먼저 생성
     
     // 상태 변경 시 setState() 함수 실행
     // 값 변경 시 build() 함수 재실행
     // Clean -> setState() -> Dirty -> build() -> Clean
     setState(() {
-      textItems.add(
+      texts.add(
         DraggableText(
-          key: itemKey,   // 각 위젯의 고유 상태 유지를 위해 필수
-          initialPosition: const Offset(100, 200), // 초기 생성 위치
+          key: txtKey,   // 각 위젯의 고유 상태 유지를 위해 필수
+          initialPosition: const Offset(100, 200),   // 초기 생성 위치
           onSubmitted: (text) {
             debugPrint('Entered text : $text');
           },
@@ -193,8 +193,9 @@ class _HomeScreenState extends State<HomeScreen> {
             // 값 변경 시 build() 함수 재실행
             // Clean -> setState() -> Dirty -> build() -> Clean
             setState(() {
-              textItems.removeWhere((item) => item.key == itemKey);
+              texts.removeWhere((item) => item.key == txtKey);
             });
+
             debugPrint('Automatically deleted due to empty text');
           },
         ),

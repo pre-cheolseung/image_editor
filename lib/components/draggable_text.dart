@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+// 텍스트 입력창을 그리는 위젯
 class DraggableText extends StatefulWidget {
   final Offset initialPosition;
   final Function(String) onSubmitted;
   final VoidCallback onDelete;   // 삭제 콜백
 
+  // const 생성자 : 최초 선언 후 변경 불가능한 빌드 타임 함수
   const DraggableText({
     required this.initialPosition,
     required this.onSubmitted,
@@ -63,6 +65,7 @@ class _DraggableTextState extends State<DraggableText> {
     setState(() {
       _isEditing = true;
     });
+
     // 상태 변경 후 프레임에서 포커스를 요청해야 안정적으로 커서가 잡힘
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
@@ -112,7 +115,10 @@ class _DraggableTextState extends State<DraggableText> {
           ),
           // Row로 감싸서 TextField와 삭제 버튼의 너비를 명확하게 분리
           child: Row(
+            // 주축 방향으로 남은 빈 공간을 최대한 채우지 않고
+            // 포함된 자식(child) 위젯들의 크기 합만큼만 영역을 차지
             mainAxisSize: MainAxisSize.min,
+            // 교차축(crossAxis)의 중앙에 자식(child) 위젯들을 정렬
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Flexible(
